@@ -6,8 +6,14 @@ Variabel yang wajib di-set di server:
 import os
 
 import dj_database_url
+from dotenv import load_dotenv
 
 from .base import *  # noqa: F401,F403
+
+# Memuat variabel dari file .env bila ada — supaya bisa menjalankan mode produksi
+# secara lokal tanpa meng-export env manual. Di server sungguhan, env diisi lewat
+# environment proses (systemd/PM2/Docker) dan file .env tidak perlu ada.
+load_dotenv()
 
 DEBUG = False
 
