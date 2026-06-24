@@ -1,4 +1,3 @@
-
 name: Continuous Deployment
 on:
   push:
@@ -14,11 +13,25 @@ jobs:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
+          envs: APP_PORT,DATABASE_URL,SECRET_KEY,CORS_ORIGIN,DOMAIN
           script: |
             cd ~/hands-on-notes-api-django
-            git checkout main               # pastikan berada di branch yang benar
+            git checkout main
             git pull origin main
-            source .venv/bin/activate
+            cat > .env << EOF
+            DEBUG=False
+            SECRET_KEY=$SECRET_KEY
+            DATABASE_URL=$DATABASE_URL
+            ALLOWED_HOSTS=localhost,127.0.0.1,$DOMAIN
+            CORS_ALLOWED_ORIGINS=$CORS_ORIGIN
+            EOF
+            source venv/bin/activate
             pip install -r requirements.txt
-            python manage.py migrate        # jalankan migrasi
-            sudo systemctl restart gunicorn # reload aplikasi
+            python manage.py migrate
+            sudo systemctl restart gunicorn
+        env:
+          APP_PORT: ${{ secrets.APP_PORT }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          SECRET_KEY: ${{ secrets.SECRET_KEY }}
+          CORS_ORIGIN: ${{ secrets.CORS_ORIGIN }}
+          DOMAIN: ${{ secrets.DOMAIN }}

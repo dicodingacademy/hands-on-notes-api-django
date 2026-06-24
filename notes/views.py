@@ -19,7 +19,7 @@ def first_error(errors):
 def health(request):
     # Endpoint publik untuk memverifikasi server hidup —
     # dipakai saat cek deployment (EC2, NGINX, Docker). Jangan diproteksi auth.
-    return JsonResponse({"status": "ok"})
+    return JsonResponse({"status": "ok from django", "version": "1.0"})
 
 
 class RegisterView(APIView):
