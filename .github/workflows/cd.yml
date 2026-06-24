@@ -13,7 +13,7 @@ jobs:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
-          envs: APP_PORT,DATABASE_URL,JWT_SECRET,CORS_ORIGIN,DOMAIN
+          envs: DJANGO_SETTINGS_MODULE,APP_PORT,DATABASE_URL,JWT_SECRET,CORS_ORIGIN,DOMAIN
           script: |
             cd ~/hands-on-notes-api-django
             git checkout main
