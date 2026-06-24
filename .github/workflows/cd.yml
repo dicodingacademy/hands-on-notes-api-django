@@ -13,14 +13,14 @@ jobs:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
-          envs: APP_PORT,DATABASE_URL,SECRET_KEY,CORS_ORIGIN,DOMAIN
+          envs: APP_PORT,DATABASE_URL,JWT_SECRET,CORS_ORIGIN,DOMAIN
           script: |
             cd ~/hands-on-notes-api-django
             git checkout main
             git pull origin main
             cat > .env << EOF
             DEBUG=False
-            SECRET_KEY=$SECRET_KEY
+            SECRET_KEY=$JWT_SECRET
             DATABASE_URL=$DATABASE_URL
             ALLOWED_HOSTS=localhost,127.0.0.1,$DOMAIN
             CORS_ALLOWED_ORIGINS=$CORS_ORIGIN
@@ -32,6 +32,6 @@ jobs:
         env:
           APP_PORT: ${{ secrets.APP_PORT }}
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          SECRET_KEY: ${{ secrets.SECRET_KEY }}
+          SECRET_KEY: ${{ secrets.JWT_SECRET }}
           CORS_ORIGIN: ${{ secrets.CORS_ORIGIN }}
           DOMAIN: ${{ secrets.DOMAIN }}
