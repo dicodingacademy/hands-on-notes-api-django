@@ -84,7 +84,7 @@ jobs:
             EOF
             sed "s|build: \.|image: ghcr.io/$GHCR_USER/notes-api-django:latest|" docker-compose.yml
             docker compose -f docker-compose.yml --env-file .env.docker up -d
-            sleep 5
+            sleep 15
             docker compose -f docker-compose.yml --env-file .env.docker exec -T app python manage.py migrate
         env:
           DJANGO_SETTINGS_MODULE: project.settings.prod
