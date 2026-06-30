@@ -23,17 +23,52 @@ jobs:
           context: .
           push: true
           tags: ghcr.io/${{ github.repository_owner }}/notes-api-django:latest
-  deploy-ec2:
+  # deploy-ec2:
+  #   needs: build
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Deploy ke EC2 via SSH
+  #       uses: appleboy/ssh-action@v1.0.3
+  #       with:
+  #         host: ${{ secrets.EC2_HOST }}
+  #         username: ${{ secrets.EC2_USER }}
+  #         key: ${{ secrets.EC2_SSH_KEY }}
+  #         envs: APP_PORT,DATABASE_URL,JWT_SECRET,CORS_ORIGIN,DOMAIN,DJANGO_SETTINGS_MODULE,GHCR_USER
+  #         script: |
+  #           docker pull ghcr.io/$GHCR_USER/notes-api-django:latest
+  #           cd ~/hands-on-notes-api-django
+  #           git checkout main
+  #           git pull origin main
+  #           cat > .env.docker << EOF
+  #           DEBUG=False
+  #           DJANGO_SETTINGS_MODULE=$DJANGO_SETTINGS_MODULE
+  #           SECRET_KEY=$JWT_SECRET
+  #           DATABASE_URL=$DATABASE_URL
+  #           ALLOWED_HOSTS=localhost,127.0.0.1,$DOMAIN
+  #           CORS_ALLOWED_ORIGINS=$CORS_ORIGIN
+  #           EOF
+  #           sed -i "s|build: \.|image: ghcr.io/$GHCR_USER/notes-api-django:latest|g" docker-compose.yml
+  #           docker compose -f docker-compose.yml --env-file .env.docker up -d
+  #           docker compose -f docker-compose.yml --env-file .env.docker exec -T app python manage.py migrate
+  #       env:
+  #         DJANGO_SETTINGS_MODULE: project.settings.prod
+  #         APP_PORT: ${{ secrets.APP_PORT }}
+  #         DATABASE_URL: ${{ secrets.DATABASE_URL }}
+  #         JWT_SECRET: ${{ secrets.JWT_SECRET }}
+  #         CORS_ORIGIN: ${{ secrets.CORS_ORIGIN }}
+  #         DOMAIN: ${{ secrets.DOMAIN }}
+  #         GHCR_USER: ${{ github.repository_owner }}
+  deploy-vps:
     needs: build
     runs-on: ubuntu-latest
     steps:
-      - name: Deploy ke EC2 via SSH
+      - name: Deploy ke VPS via SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USER }}
-          key: ${{ secrets.EC2_SSH_KEY }}
-          envs: APP_PORT,DATABASE_URL,JWT_SECRET,CORS_ORIGIN,DOMAIN,DJANGO_SETTINGS_MODULE,GHCR_USER
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          envs: APP_PORT,DATABASE_URL,JWT_SECRET,CORS_ORIGIN,DOMAIN_VPS,DJANGO_SETTINGS_MODULE,GHCR_USER
           script: |
             docker pull ghcr.io/$GHCR_USER/notes-api-django:latest
             cd ~/hands-on-notes-api-django
@@ -44,11 +79,12 @@ jobs:
             DJANGO_SETTINGS_MODULE=$DJANGO_SETTINGS_MODULE
             SECRET_KEY=$JWT_SECRET
             DATABASE_URL=$DATABASE_URL
-            ALLOWED_HOSTS=localhost,127.0.0.1,$DOMAIN
+            ALLOWED_HOSTS=localhost,127.0.0.1,$DOMAIN_VPS
             CORS_ALLOWED_ORIGINS=$CORS_ORIGIN
             EOF
-            sed -i "s|build: \.|image: ghcr.io/$GHCR_USER/notes-api-django:latest|g" docker-compose.yml
+            sed "s|build: \.|image: ghcr.io/$GHCR_USER/notes-api-django:latest|" docker-compose.yml
             docker compose -f docker-compose.yml --env-file .env.docker up -d
+            sleep 5
             docker compose -f docker-compose.yml --env-file .env.docker exec -T app python manage.py migrate
         env:
           DJANGO_SETTINGS_MODULE: project.settings.prod
@@ -56,5 +92,5 @@ jobs:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
           CORS_ORIGIN: ${{ secrets.CORS_ORIGIN }}
-          DOMAIN: ${{ secrets.DOMAIN }}
+          DOMAIN_VPS: ${{ secrets.DOMAIN_VPS }}
           GHCR_USER: ${{ github.repository_owner }}
