@@ -8,4 +8,5 @@ urlpatterns = [
     path("auth/login", views.LoginView.as_view()),
     path("notes", views.NoteListView.as_view()),
     path("notes/<int:note_id>", views.NoteDetailView.as_view()),
+    path("predict", views.ClassifyView.as_view(), name="classify-meme"),
 ]

@@ -1,3 +1,6 @@
+import os
+
+import requests as http_requests
 from django.contrib.auth import authenticate
 from django.http import JsonResponse
 from rest_framework import status
@@ -6,8 +9,13 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import AccessToken
 
-from .models import Note
+from .models import Classification, Note
 from .serializers import NoteSerializer, RegisterSerializer
+
+# URL layanan AI eksternal dibaca dari environment (AI_SERVICE_URL) —
+# sama seperti konfigurasi lain, tidak pernah di-hardcode.
+AI_URL = os.environ.get("AI_SERVICE_URL")
+
 
 
 def first_error(errors):
@@ -101,3 +109,44 @@ class NoteDetailView(APIView):
             return Response({"error": "catatan tidak ditemukan"}, status=404)
         note.delete()
         return Response({"data": {"id": note_id}})
+
+
+class ClassifyView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        uploaded = request.FILES.get("file")
+        if not uploaded:
+            return Response({"error": "file gambar wajib disertakan"}, status=400)
+
+        # 1. Teruskan gambar ke layanan AI
+        try:
+            # Elemen ketiga (content_type) wajib: tanpa itu requests mengirim
+            # application/octet-stream, dan layanan AI menolaknya (400, bukan gambar).
+            ai_response = http_requests.post(
+                f"{AI_URL}/predict",
+                files={"file": (uploaded.name, uploaded.read(), uploaded.content_type)},
+                timeout=30,
+            )
+            ai_response.raise_for_status()
+            predictions = ai_response.json()["predictions"]
+        except http_requests.Timeout:
+            return Response({"error": "layanan AI terlalu lama merespons"}, status=504)
+        except http_requests.RequestException:
+            return Response({"error": "gagal menghubungi layanan AI"}, status=502)
+
+        # 2. Simpan hasil ke database (kegagalan simpan tidak membatalkan respons ke FE)
+        top_result = predictions[0]
+        try:
+            Classification.objects.create(
+                user=request.user,
+                image_name=uploaded.name,
+                top_label=top_result["label"],
+                top_confidence=top_result["confidence"],
+                all_predictions=predictions,
+            )
+        except Exception:
+            pass
+
+        # 3. Kembalikan hasil ke Front-End
+        return Response({"data": {"predictions": predictions}})
